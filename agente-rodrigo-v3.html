@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente de Vídeos IA 🤖</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root {
+      --bg: #040812;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.08);
+      --accent: #34d399;
+      --accent2: #818cf8;
+      --text: #e2e8f0;
+      --muted: #475569;
+      --success: #34d399;
+      --error: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px 60px;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 70% 40% at 50% -5%, rgba(52,211,153,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 30% at 85% 85%, rgba(129,140,248,0.05) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+    }
+    .wrap { position: relative; z-index: 1; width: 100%; max-width: 520px; }
+    .header { text-align: center; margin-bottom: 28px; animation: fadeUp 0.6s ease both; }
+    .bot-icon {
+      width: 70px; height: 70px; border-radius: 22px;
+      background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(129,140,248,0.15));
+      border: 1px solid rgba(52,211,153,0.25);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 34px; margin-bottom: 14px;
+      box-shadow: 0 0 40px rgba(52,211,153,0.1);
+    }
+    h1 {
+      font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 900;
+      background: linear-gradient(90deg, #34d399, #818cf8, #fb923c);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle { color: var(--muted); font-size: 11px; margin-top: 7px; }
+    .badge {
+      display: inline-block; margin-top: 9px;
+      color: var(--accent); background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.2);
+      border-radius: 20px; padding: 4px 12px; font-size: 11px;
+    }
+    .free-badge {
+      display: inline-block; margin-top: 6px; margin-left: 6px;
+      color: #fb923c; background: rgba(251,146,60,0.08);
+      border: 1px solid rgba(251,146,60,0.2);
+      border-radius: 20px; padding: 3px 10px; font-size: 10px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      animation: fadeUp 0.6s ease both;
+    }
+    .section-label {
+      font-size: 10px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 1.5px; display: block; margin-bottom: 12px;
+    }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .topics-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; margin-bottom: 24px; }
+    .topic-btn {
+      padding: 7px 13px; border-radius: 20px; font-size: 11px;
+      font-family: 'Space Mono', monospace; cursor: pointer; transition: all 0.2s;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--muted);
+    }
+    .topic-btn.active {
+      border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.1); color: #6ee7b7;
+    }
+    .steps { margin-bottom: 24px; }
+    .step { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .step:last-child { border-bottom: none; }
+    .step-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+      flex-shrink: 0; border: 1px solid var(--border); background: rgba(255,255,255,0.03); transition: all 0.4s;
+    }
+    .step-icon.active {
+      border-color: rgba(129,140,248,0.6); background: rgba(129,140,248,0.12);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .step-icon.done { border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.1); font-size: 14px; }
+    .step-label { font-size: 13px; color: var(--muted); transition: color 0.3s; }
+    .step-label.active { color: #c7d2fe; font-weight: 700; }
+    .step-label.done { color: var(--accent); }
+    .run-btn {
+      width: 100%; padding: 16px; border-radius: 12px; border: none; cursor: pointer;
+      background: linear-gradient(90deg, #10b981, #6366f1);
+      color: #fff; font-size: 16px; font-weight: 700;
+      font-family: 'Syne', sans-serif; letter-spacing: 0.5px; transition: all 0.3s;
+      box-shadow: 0 4px 24px rgba(16,185,129,0.3);
+    }
+    .run-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(16,185,129,0.4); }
+    .run-btn:disabled { background: rgba(16,185,129,0.2); cursor: not-allowed; box-shadow: none; transform: none; }
+    .success-box {
+      margin-top: 18px; padding: 22px; border-radius: 14px;
+      background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+      text-align: center; animation: fadeUp 0.4s ease both;
+    }
+    .success-box .emoji { font-size: 38px; margin-bottom: 8px; }
+    .success-box .title { color: var(--success); font-weight: 700; font-family: 'Syne', sans-serif; font-size: 16px; }
+    .success-box .sub { color: #065f46; font-size: 12px; margin-top: 6px; line-height: 1.5; }
+    .success-box .em { color: #6ee7b7; }
+    .error-box {
+      margin-top: 16px; padding: 16px; border-radius: 14px;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    }
+    .error-box .msg { color: var(--error); font-size: 13px; line-height: 1.5; }
+    .error-box .sub { color: #7f1d1d; font-size: 11px; margin-top: 6px; }
+    .log-box {
+      margin-top: 16px; background: rgba(0,0,0,0.5); border-radius: 10px;
+      padding: 14px 16px; border: 1px solid rgba(255,255,255,0.05);
+      max-height: 160px; overflow-y: auto;
+    }
+    .log-title { font-size: 9px; color: #1e3a5f; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+    .log-line { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; gap: 8px; }
+    .log-time { color: #1e3a5f; flex-shrink: 0; }
+    .log-ok { color: var(--success); }
+    .log-err { color: var(--error); }
+    .results-section { margin-top: 22px; }
+    .results-title { font-family: 'Syne', sans-serif; font-size: 13px; color: var(--accent); margin-bottom: 14px; }
+    .video-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    }
+    .video-num { font-size: 10px; color: var(--accent); margin-bottom: 4px; }
+    .video-title { font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
+    .video-channel { font-size: 11px; color: var(--accent2); margin-bottom: 6px; }
+    .video-desc { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+    .video-link { font-size: 11px; color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(52,211,153,0.3); }
+    .footer { text-align: center; color: #1e293b; font-size: 10px; margin-top: 20px; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(129,140,248,0.3); }
+      50% { box-shadow: 0 0 20px rgba(129,140,248,0.6); }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="bot-icon">🤖</div>
+    <h1>Agente de Vídeos IA</h1>
+    <p class="subtitle">Gemini + EmailJS • 100% Gratuito</p>
+    <div>
+      <span class="badge">📧 rodriguesadsr398@gmail.com</span>
+      <span class="free-badge">✅ Grátis</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="section-label">📌 Temas selecionados</label>
+    <div class="topics-grid" id="topicsGrid">
+      <button class="topic-btn active" data-topic="agentes de ia">agentes de ia</button>
+      <button class="topic-btn active" data-topic="ferramentas de automação com ia">automação com ia</button>
+      <button class="topic-btn active" data-topic="Claude code novidades">Claude code</button>
+      <button class="topic-btn active" data-topic="Codex OpenAI novidades">Codex OpenAI</button>
+      <button class="topic-btn" data-topic="n8n automação tutorial">n8n</button>
+      <button class="topic-btn" data-topic="Make Zapier automação">Make / Zapier</button>
+      <button class="topic-btn" data-topic="low code sem código IA">low code</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <label class="section-label">⚡ Progresso</label>
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon" id="icon-0">🔍</div>
+        <div class="step-label" id="label-0">Buscando vídeos com Gemini</div>
+      </div>
+      <div class="step">
+        <div class="step-icon" id="icon-1">🧠</div>
+        <div class="step-label" id="label-1">Analisando e formatando</div>
+      </div>
+      <div class="step">
+        <div class="step-icon" id="icon-2">✍️</div>
+        <div class="step-label" id="label-2">Criando e-mail personalizado</div>
+      </div>
+      <div class="step">
+        <div class="step-icon" id="icon-3">📨</div>
+        <div class="step-label" id="label-3">Enviando via EmailJS</div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="runBtn" onclick="runAgent()">
+      🚀 Executar Agente Agora
+    </button>
+
+    <div class="success-box" id="successBox" style="display:none">
+      <div class="emoji">🎉</div>
+      <div class="title">E-mail enviado com sucesso!</div>
+      <div class="sub">Verifique a caixa de entrada de<br><span class="em">rodriguesadsr398@gmail.com</span></div>
+    </div>
+
+    <div class="error-box" id="errorBox" style="display:none">
+      <div class="msg" id="errorMsg"></div>
+      <div class="sub" id="errorSub"></div>
+    </div>
+
+    <div class="log-box" id="logBox" style="display:none">
+      <div class="log-title">Terminal</div>
+      <div id="logLines"></div>
+    </div>
+
+    <div class="results-section" id="resultsSection" style="display:none">
+      <div class="results-title">📺 Vídeos encontrados</div>
+      <div id="videoCards"></div>
+    </div>
+  </div>
+
+  <p class="footer">Gemini Flash • EmailJS Free • Feito para Rodrigo ❤️</p>
+</div>
+
+<script>
+  var GEMINI_KEY   = 'AIzaSyD7EnDgIQ09PfsUaXxDGqHRKUB3jIClhlYb';
+  var EJS_SERVICE  = 'service_42gg4ek';
+  var EJS_TEMPLATE = 'template_1zuvs65';
+  var EJS_PUBKEY   = 'bh-7SHqwvsiktoR1N';
+  var EMAIL        = 'rodriguesadsr398@gmail.com';
+  var running      = false;
+
+  // Topic toggle
+  document.querySelectorAll('.topic-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!running) btn.classList.toggle('active');
+    });
+  });
+
+  function getTopics() {
+    return Array.from(document.querySelectorAll('.topic-btn.active')).map(function(b) { return b.dataset.topic; });
+  }
+
+  function addLog(msg, cls) {
+    var box = document.getElementById('logBox');
+    var lines = document.getElementById('logLines');
+    box.style.display = 'block';
+    var now = new Date().toLocaleTimeString('pt-BR');
+    var el = document.createElement('div');
+    el.className = 'log-line';
+    el.innerHTML = '<span class="log-time">' + now + '</span><span class="' + (cls||'') + '">' + msg + '</span>';
+    lines.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function setStep(i, state) {
+    var icons = ['🔍','🧠','✍️','📨'];
+    var icon = document.getElementById('icon-' + i);
+    var label = document.getElementById('label-' + i);
+    icon.className = 'step-icon ' + state;
+    label.className = 'step-label ' + state;
+    icon.textContent = state === 'done' ? '✓' : icons[i];
+  }
+
+  function resetAll() {
+    for (var i = 0; i < 4; i++) setStep(i, '');
+    document.getElementById('successBox').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('logBox').style.display = 'none';
+    document.getElementById('logLines').innerHTML = '';
+  }
+
+  function showError(msg, sub) {
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorSub').textContent = sub || '';
+    document.getElementById('errorBox').style.display = 'block';
+  }
+
+  function renderVideos(videos) {
+    if (!videos || videos.length === 0) return;
+    var cards = document.getElementById('videoCards');
+    cards.innerHTML = '';
+    videos.forEach(function(v, i) {
+      var c = document.createElement('div');
+      c.className = 'video-card';
+      c.innerHTML =
+        '<div class="video-num">VÍDEO ' + (i+1) + '</div>' +
+        '<div class="video-title">' + (v.titulo || v.title || 'Sem título') + '</div>' +
+        '<div class="video-channel">📺 ' + (v.canal || v.channel || '') + '</div>' +
+        '<div class="video-desc">' + (v.descricao || v.description || '') + '</div>' +
+        (v.url ? '<a class="video-link" href="' + v.url + '" target="_blank">🔗 Assistir</a>' : '');
+      cards.appendChild(c);
+    });
+    document.getElementById('resultsSection').style.display = 'block';
+  }
+
+  function buildEmailBody(videos, topics) {
+    var today = new Date().toLocaleDateString('pt-BR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    var rows = '';
+    videos.forEach(function(v, i) {
+      rows += '\n━━━━━━━━━━━━━━━━━━━━\n';
+      rows += '📹 VÍDEO ' + (i+1) + ': ' + (v.titulo || v.title || '') + '\n';
+      rows += '📺 Canal: ' + (v.canal || v.channel || '') + '\n';
+      rows += '📝 ' + (v.descricao || v.description || '') + '\n';
+      if (v.url) rows += '🔗 ' + v.url + '\n';
+    });
+    return 'Olá Rodrigo! 👋\n\nAqui estão suas recomendações de hoje sobre:\n' + topics.join(', ') + '\n' + rows + '\n━━━━━━━━━━━━━━━━━━━━\n📅 ' + today + '\nEnviado com ❤️ pelo seu Agente de Vídeos IA 🤖';
+  }
+
+  function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  async function callGemini(prompt) {
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_KEY;
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1500 }
+      })
+    });
+    if (!res.ok) {
+      var err = await res.json().catch(function() { return {}; });
+      throw new Error('Gemini: ' + (err.error && err.error.message ? err.error.message : 'Erro ' + res.status));
+    }
+    var data = await res.json();
+    return data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] ? data.candidates[0].content.parts[0].text : '';
+  }
+
+  async function runAgent() {
+    if (running) return;
+    var topics = getTopics();
+    if (topics.length === 0) { showError('❌ Selecione ao menos um tema.', ''); return; }
+
+    running = true;
+    resetAll();
+    var btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.textContent = '⚡ Agente rodando...';
+
+    var videos = [];
+
+    try {
+      // STEP 0
+      setStep(0, 'active');
+      addLog('Conectando ao Gemini...');
+
+      var prompt = 'Você é um especialista em tecnologia e IA. Liste os 5 melhores vídeos do YouTube mais recentes (2024/2025) sobre: ' + topics.join(', ') + '.\n\nRetorne APENAS um array JSON válido, sem markdown, sem texto extra:\n[{"titulo":"...","canal":"...","url":"https://youtube.com/watch?v=...","descricao":"1-2 frases em português","tema":"..."}]';
+
+      var raw = await callGemini(prompt);
+
+      try {
+        var clean = raw.replace(/```json|```/g, '').trim();
+        var match = clean.match(/\[[\s\S]*\]/);
+        if (match) videos = JSON.parse(match[0]);
+      } catch(e) { videos = []; }
+
+      setStep(0, 'done');
+      addLog((videos.length > 0 ? videos.length : 'Vários') + ' vídeos encontrados!', 'log-ok');
+
+      // STEP 1
+      setStep(1, 'active');
+      addLog('Analisando conteúdo...');
+      await sleep(600);
+      if (videos.length > 0) renderVideos(videos);
+      setStep(1, 'done');
+      addLog('Análise concluída.', 'log-ok');
+
+      // STEP 2
+      setStep(2, 'active');
+      addLog('Compondo e-mail...');
+      var body = buildEmailBody(
+        videos.length > 0 ? videos : [{ titulo: 'Conteúdo sobre ' + topics[0], canal: 'YouTube', url: '', descricao: raw.substring(0, 300) }],
+        topics
+      );
+      await sleep(500);
+      setStep(2, 'done');
+      addLog('E-mail composto!', 'log-ok');
+
+      // STEP 3
+      setStep(3, 'active');
+      addLog('Enviando para ' + EMAIL + '...');
+
+      emailjs.init(EJS_PUBKEY);
+      var today2 = new Date().toLocaleDateString('pt-BR');
+
+      await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+        name: 'Rodrigo',
+        time: today2,
+        message: body,
+        to_email: EMAIL,
+        subject: '🤖 Recomendações de hoje | ' + topics.slice(0,2).join(' & '),
+        from_name: 'Agente de Vídeos IA'
+      });
+
+      setStep(3, 'done');
+      addLog('E-mail enviado com sucesso! ✅', 'log-ok');
+      document.getElementById('successBox').style.display = 'block';
+
+    } catch(e) {
+      addLog('Erro: ' + (e.message || 'Falha inesperada'), 'log-err');
+      showError('❌ ' + (e.message || 'Erro inesperado'), 'Verifique sua conexão e tente novamente.');
+      for (var j = 0; j < 4; j++) setStep(j, '');
+    } finally {
+      running = false;
+      btn.disabled = false;
+      btn.textContent = '🔄 Rodar novamente';
+    }
+  }
+</script>
+</body>
+</html>
